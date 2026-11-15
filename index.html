@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmetic INCI Analyzer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        emerald: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            800: '#065f46',
+                            900: '#064e3b',
+                            950: '#022c22',
+                        },
+                        darkBg: '#0b1311',
+                        cardBg: '#121f1b',
+                        cardBorder: '#1e332d'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b1311;
+            color: #e2e8f0;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0b1311;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e332d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #059669;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-darkBg text-slate-100 flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
+
+    <!-- Header -->
+    <header class="border-b border-cardBorder bg-cardBg/60 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-700 flex items-center justify-center shadow-lg shadow-emerald-900/40">
+                    <svg class="w-6 h-6 text-darkBg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-white tracking-tight flex items-center gap-2">
+                        INCI Analyzer <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800">Pro</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Профессиональный разбор состава косметики</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <button onclick="downloadFile()" class="text-xs font-medium text-emerald-400 hover:text-white px-3 py-1.5 rounded-lg border border-emerald-800/60 bg-emerald-950/40 hover:bg-emerald-900/60 transition flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    <span class="hidden sm:inline">Скачать HTML</span>
+                </button>
+                <button onclick="clearAll()" class="text-xs font-medium text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-cardBorder hover:border-emerald-700 transition">
+                    Очистить
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Column: Input & Presets -->
+        <section class="lg:col-span-5 flex flex-col space-y-6">
+            
+            <!-- Input Card -->
+            <div class="bg-cardBg border border-cardBorder rounded-2xl p-5 shadow-xl flex flex-col space-y-4">
+                <div class="flex items-center justify-between">
+                    <label for="inciInput" class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        Введите список INCI ингредиентов:
+                    </label>
+                    <span class="text-xs text-slate-400">Через запятую или с новой строки</span>
+                </div>
+
+                <textarea id="inciInput" rows="7" placeholder="Например: Aqua, Glycerin, Sodium Laureth Sulfate, Niacinamide, Parfum..." class="w-full bg-darkBg border border-cardBorder rounded-xl p-3.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition resize-y"></textarea>
+
+                <button onclick="analyzeIngredients()" class="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-darkBg font-semibold py-3 px-4 rounded-xl shadow-lg shadow-emerald-900/30 transition flex items-center justify-center gap-2 text-sm tracking-wide">
+                    <svg class="w-5 h-5 text-darkBg" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+                    Анализировать состав
+                </button>
+            </div>
+
+            <!-- Presets Card -->
+            <div class="bg-cardBg border border-cardBorder rounded-2xl p-5 shadow-xl flex flex-col space-y-4">
+                <h3 class="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    Готовые примеры для проверки:
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <button onclick="loadPreset('cleanser')" class="text-left p-3 rounded-xl bg-darkBg border border-cardBorder hover:border-emerald-600/60 hover:bg-emerald-950/20 transition group">
+                        <div class="text-xs font-semibold text-emerald-400 group-hover:text-emerald-300">Гель для умывания</div>
+                        <div class="text-[11px] text-slate-400 truncate mt-0.5">SLES, Glycerin, Cocamidopropyl Betaine...</div>
+                    </button>
+                    <button onclick="loadPreset('cream')" class="text-left p-3 rounded-xl bg-darkBg border border-cardBorder hover:border-emerald-600/60 hover:bg-emerald-950/20 transition group">
+                        <div class="text-xs font-semibold text-emerald-400 group-hover:text-emerald-300">Увлажняющий крем</div>
+                        <div class="text-[11px] text-slate-400 truncate mt-0.5">Aqua, Isopropyl Myristate, Niacinamide...</div>
+                    </button>
+                    <button onclick="loadPreset('serum')" class="text-left p-3 rounded-xl bg-darkBg border border-cardBorder hover:border-emerald-600/60 hover:bg-emerald-950/20 transition group">
+                        <div class="text-xs font-semibold text-emerald-400 group-hover:text-emerald-300">Активная сыворотка</div>
+                        <div class="text-[11px] text-slate-400 truncate mt-0.5">Aqua, Niacinamide, Salicylic Acid, Parfum...</div>
+                    </button>
+                    <button onclick="loadPreset('problematic')" class="text-left p-3 rounded-xl bg-darkBg border border-cardBorder hover:border-emerald-600/60 hover:bg-emerald-950/20 transition group">
+                        <div class="text-xs font-semibold text-emerald-400 group-hover:text-emerald-300">Спорный состав</div>
+                        <div class="text-[11px] text-slate-400 truncate mt-0.5">Alcohol Denat, Linalool, Isopropyl Palmitate...</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tips Card -->
+            <div class="bg-gradient-to-br from-emerald-950/40 to-cardBg border border-emerald-900/30 rounded-2xl p-5 shadow-xl text-xs text-slate-300 space-y-2">
+                <div class="font-semibold text-emerald-400 flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Как читать состав?
+                </div>
+                <p>Ингредиенты всегда указываются в порядке убывания их концентрации в продукте. Первые 3–5 компонентов составляют основу формулы.</p>
+            </div>
+
+        </section>
+
+        <!-- Right Column: Results & Breakdown -->
+        <section class="lg:col-span-7 flex flex-col space-y-6">
+            
+            <!-- Empty State -->
+            <div id="emptyState" class="bg-cardBg border border-cardBorder rounded-2xl p-12 text-center flex flex-col items-center justify-center space-y-4 shadow-xl min-h-[450px]">
+                <div class="w-16 h-16 rounded-2xl bg-emerald-950/50 border border-emerald-800/40 flex items-center justify-center text-emerald-400 shadow-inner">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                </div>
+                <div class="max-w-sm">
+                    <h3 class="text-base font-semibold text-white">Анализ еще не проведен</h3>
+                    <p class="text-xs text-slate-400 mt-1">Введите список ингредиентов слева или выберите один из готовых пресетов, чтобы увидеть подробный разбор формулы.</p>
+                </div>
+            </div>
+
+            <!-- Results Container (Hidden by default) -->
+            <div id="resultsContainer" class="hidden flex flex-col space-y-6">
+                
+                <!-- Overview Verdict Card -->
+                <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl flex flex-col space-y-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-cardBorder pb-4">
+                        <div>
+                            <span class="text-xs uppercase tracking-wider text-slate-400 font-medium">Общий вердикт состава</span>
+                            <h2 id="verdictTitle" class="text-xl font-bold text-white mt-0.5">Безопасный состав</h2>
+                        </div>
+                        <div id="safetyScoreBadge" class="px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 self-start sm:self-auto border">
+                            <!-- Score populated via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Risk Indicators Grid -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div class="bg-darkBg border border-cardBorder rounded-xl p-3 text-center">
+                            <div class="text-[11px] text-slate-400 font-medium">Комедогенность</div>
+                            <div id="riskComedogenic" class="text-sm font-bold mt-1 text-slate-200">0 / 5</div>
+                        </div>
+                        <div class="bg-darkBg border border-cardBorder rounded-xl p-3 text-center">
+                            <div class="text-[11px] text-slate-400 font-medium">Аллергены</div>
+                            <div id="riskAllergens" class="text-sm font-bold mt-1 text-slate-200">0</div>
+                        </div>
+                        <div class="bg-darkBg border border-cardBorder rounded-xl p-3 text-center">
+                            <div class="text-[11px] text-slate-400 font-medium">Сульфаты / ПАВ</div>
+                            <div id="riskSulfates" class="text-sm font-bold mt-1 text-slate-200">Нет</div>
+                        </div>
+                        <div class="bg-darkBg border border-cardBorder rounded-xl p-3 text-center">
+                            <div class="text-[11px] text-slate-400 font-medium">Отдушки / Спирт</div>
+                            <div id="riskIrritants" class="text-sm font-bold mt-1 text-slate-200">Нет</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Component Breakdown List -->
+                <div class="bg-cardBg border border-cardBorder rounded-2xl p-6 shadow-xl flex flex-col space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-white flex items-center gap-2">
+                            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                            Детальный разбор компонентов (<span id="componentCount">0</span>)
+                        </h3>
+                        <span class="text-xs text-slate-400">По степени концентрации</span>
+                    </div>
+
+                    <div id="componentsList" class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                        <!-- Dynamic items -->
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Custom Notification Modal / Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-cardBg border border-emerald-600 text-slate-100 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3">
+        <svg class="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        <span id="toastText" class="text-xs font-medium">Уведомление</span>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-cardBorder py-6 text-center text-xs text-slate-500 mt-auto">
+        <p>INCI Analyzer Pro &copy; 2026. Данные носят информационный характер и не заменяют консультацию дерматолога.</p>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Comprehensive Database of Cosmetic Ingredients
+        const ingredientDatabase = {
+            "aqua": {
+                name: "Aqua (Вода)",
+                safety: "Отлично",
+                safetyColor: "bg-emerald-950 text-emerald-400 border-emerald-800",
+                comedogenic: 0,
+                function: "Растворитель, база продукта",
+                description: "Очищенная вода, основа большинства косметических средств."
+            },
+            "glycerin": {
+                name: "Glycerin (Глицерин)",
+                safety: "Хорошо",
+                safetyColor: "bg-emerald-950 text-emerald-400 border-emerald-800",
+                comedogenic: 0,
+                function: "Увлажнитель, хумектант",
+                description: "Притягивает влагу из воздуха в эпидермис, смягчает кожу."
+            },
+            "niacinamide": {
+                name: "Niacinamide (Ниацинамид / Витамин B3)",
+                safety: "Отлично",
+                safetyColor: "bg-emerald-950 text-emerald-400 border-emerald-800",
+                comedogenic: 0,
+                function: "Антиоксидант, осветление, себорегуляция",
+                description: "Универсальный компонент: сужает поры, укрепляет барьер, борется с пигментацией."
+            },
+            "sodium laureth sulfate": {
+                name: "Sodium Laureth Sulfate (SLES)",
+                safety: "Умеренно",
+                safetyColor: "bg-amber-950 text-amber-400 border-amber-800",
+                comedogenic: 0,
+                function: "ПАВ, пенообразователь, очищение",
+                description: "Эффективный очиститель. Может подсушивать чувствительную кожу при долгом контакте."
+            },
+            "sodium lauryl sulfate": {
+                name: "Sodium Lauryl Sulfate (SLS)",
+                safety: "Спорно",
+                safetyColor: "bg-rose-950 text-rose-400 border-rose-800",
+                comedogenic: 0,
+                function: "Сильный ПАВ, пенообразователь",
+                description: "Агрессивный ПАВ, способен вызывать раздражение и сухость кожи."
+            },
+            "cocamidopropyl betaine": {
+                name: "Cocamidopropyl Betaine",
+                safety: "Хорошо",
+                safetyColor: "bg-emerald-950 text-emerald-400 border-emerald-800",
+                comedogenic: 0,
+                function: "Мягкий ПАВ, соПАВ, кондиционер",
+                description: "Мягкий кокосовый ПАВ, снижает раздражающее действие жестких сульфатов."
+            },
+            "isopropyl myristate": {
+                name: "Isopropyl Myristate",
+                safety: "Внимание",
+                safetyColor: "bg-rose-950 text-rose-400 border-rose-800",
+                comedogenic: 5,
+                function: "Эмолент, растворитель",
+                description: "Сильно комедогенный компонент! Легко забивает поры, противопоказан для проблемной кожи."
+            },
+            "isopropyl palmitate": {
+                name: "Isopropyl Palmitate",
+                safety: "Внимание",
+                safetyColor: "bg-rose-950 text-rose-400 border-rose-800",
+                comedogenic: 4,
+                function: "Эмолент, смягчитель кожи",
+                description: "Высокая степень комедогенности. Может провоцировать высыпания."
+            },
+            "salicylic acid": {
+                name: "Salicylic Acid (Салициловая кислота / BHA)",
+                safety: "Отлично",
+                safetyColor: "bg-emerald-950 text-emerald-400 border-emerald-800",
+                comedogenic: 0,
+                function: "Отшелушивание, противовоспалительное",
+                description: "Жирорастворимая кислота, проникает в поры, растворяет сальные пробки и борется с акне."
+            },
+            "alcohol denat": {
+                name: "Alcohol Denat. (Денатурированный спирт)",
+                safety: "Спорно",
+                safetyColor: "bg-rose-950 text-rose-400 border-rose-800",
+                comedogenic: 0,
+                function: "Растворитель, антисептик, энхансер",
+                description: "Может сильно сушить и повреждать защитный барьер кожи при высокой концентрации."
+            },
+            "linalool": {
+                name: "Linalool (Линалоол)",
+                safety: "Аллерген",
+                safetyColor: "bg-amber-950 text-amber-400 border-amber-800",
+                comedogenic: 0,
+                function: "Компонент отдушки, ароматизатор",
+                description: "Природный ароматизатор, официальный потенциальный аллерген для реактивной кожи."
+            },
+            "parfum": {
+                name: "Parfum / Fragrance (Отдушка)",
+                safety: "Спорно",
+                safetyColor: "bg-rose-950 text-rose-400 border-rose-800",
+                comedogenic: 0,
+                function: "Ароматизатор",
+                description: "Смесь ароматических компонентов. Частая причина аллергических реакций и дерматитов."
+            },
+            "hyaluronic acid": {
+                name: "Sodium Hyaluronate (Гиалуроновая кислота)",
+                safety: "Отлично",
+                safetyColor: "bg-emerald-950 text-emerald-400 border-emerald-800",
+                comedogenic: 0,
+                function: "Мощный увлажнитель",
+                description: "Удерживает влагу в тысячу раз превышающую собственный вес, разглаживает текстуру."
+            },
+            "panthenol": {
+                name: "Panthenol (Пантенол / Витамин B5)",
+                safety: "Отлично",
+                safetyColor: "bg-emerald-950 text-emerald-400 border-emerald-800",
+                comedogenic: 0,
+                function: "Заживление, регенерация, успокаивающее",
+                description: "Эффективно восстанавливает поврежденную кожу, снимает покраснения."
+            },
+            "tocopherol": {
+                name: "Tocopherol (Токоферол / Витамин E)",
+                safety: "Отлично",
+                safetyColor: "bg-emerald-950 text-emerald-400 border-emerald-800",
+                comedogenic: 2,
+                function: "Антиоксидант",
+                description: "Защищает клетки от свободных радикалов, питает и стабилизирует формулу."
+            },
+            "dimethicone": {
+                name: "Dimethicone (Силикон)",
+                safety: "Хорошо",
+                safetyColor: "bg-emerald-950 text-emerald-400 border-emerald-800",
+                comedogenic: 1,
+                function: "Эмолент, защита, шелковистость",
+                description: "Создает легкую дышащую пленку, которая предотвращает потерю влаги и дает приятный тактильный эффект."
+            },
+            "phenoxyethanol": {
+                name: "Phenoxyethanol (Феноксиэтанол)",
+                safety: "Хорошо",
+                safetyColor: "bg-emerald-950 text-emerald-400 border-emerald-800",
+                comedogenic: 0,
+                function: "Консервант",
+                description: "Безопасный современный консервант в разрешенных концентрациях до 1%."
+            }
+        };
+
+        // Presets data
+        const presets = {
+            cleanser: "Aqua, Glycerin, Sodium Laureth Sulfate, Cocamidopropyl Betaine, Phenoxyethanol, Parfum, Linalool",
+            cream: "Aqua, Glycerin, Isopropyl Myristate, Dimethicone, Niacinamide, Panthenol, Phenoxyethanol, Tocopherol",
+            serum: "Aqua, Niacinamide, Salicylic Acid, Sodium Hyaluronate, Panthenol, Phenoxyethanol",
+            problematic: "Aqua, Isopropyl Palmitate, Alcohol Denat., Sodium Lauryl Sulfate, Parfum, Linalool, Phenoxyethanol"
+        };
+
+        function downloadFile() {
+            const htmlContent = document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'index.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Файл index.html успешно скачан!');
+        }
+
+        function loadPreset(key) {
+            document.getElementById('inciInput').value = presets[key];
+            analyzeIngredients();
+            showToast('Пресет загружен и проанализирован!');
+        }
+
+        function clearAll() {
+            document.getElementById('inciInput').value = '';
+            document.getElementById('emptyState').classList.remove('hidden');
+            document.getElementById('resultsContainer').classList.add('hidden');
+            showToast('Очищено');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastText').innerText = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function analyzeIngredients() {
+            const rawText = document.getElementById('inciInput').value.trim();
+            if (!rawText) {
+                showToast('Пожалуйста, введите список ингредиентов!');
+                return;
+            }
+
+            const items = rawText.split(/,|\n|;/).map(i => i.trim()).filter(i => i.length > 0);
+
+            if (items.length === 0) {
+                showToast('Не удалось распознать ингредиенты');
+                return;
+            }
+
+            let maxComedogenic = 0;
+            let allergenCount = 0;
+            let hasSulfates = false;
+            let hasIrritants = false;
+
+            const analyzedList = items.map((rawName, index) => {
+                const lowerKey = rawName.toLowerCase();
+                let matchedData = null;
+
+                for (const key in ingredientDatabase) {
+                    if (lowerKey.includes(key)) {
+                        matchedData = ingredientDatabase[key];
+                        break;
+                    }
+                }
+
+                if (!matchedData) {
+                    matchedData = {
+                        name: rawName,
+                        safety: "Неизвестно",
+                        safetyColor: "bg-slate-800 text-slate-300 border-slate-700",
+                        comedogenic: 0,
+                        function: "Компонент формулы",
+                        description: "Специализированный или редкий компонент. Требует индивидуальной проверки."
+                    };
+                }
+
+                if (matchedData.comedogenic > maxComedogenic) {
+                    maxComedogenic = matchedData.comedogenic;
+                }
+                if (matchedData.safety === "Аллерген") {
+                    allergenCount++;
+                }
+                if (lowerKey.includes('sulfate') || lowerKey.includes('sls') || lowerKey.includes('sles')) {
+                    hasSulfates = true;
+                }
+                if (lowerKey.includes('alcohol') || lowerKey.includes('parfum') || lowerKey.includes('fragrance') || matchedData.safety === "Спорно") {
+                    hasIrritants = true;
+                }
+
+                return {
+                    original: rawName,
+                    ...matchedData,
+                    position: index + 1
+                };
+            });
+
+            let deduction = (maxComedogenic * 8) + (allergenCount * 12) + (hasSulfates ? 10 : 0) + (hasIrritants ? 10 : 0);
+            let score = Math.max(30, 100 - deduction);
+
+            const verdictTitle = document.getElementById('verdictTitle');
+            const safetyBadge = document.getElementById('safetyScoreBadge');
+
+            if (score >= 85) {
+                verdictTitle.innerText = "Отличный безопасный состав";
+                safetyBadge.className = "px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 bg-emerald-950 text-emerald-400 border border-emerald-800";
+                safetyBadge.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> Рейтинг безопасности: ${score}/100`;
+            } else if (score >= 60) {
+                verdictTitle.innerText = "Умеренно безопасный состав";
+                safetyBadge.className = "px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 bg-amber-950 text-amber-400 border border-amber-800";
+                safetyBadge.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> Рейтинг безопасности: ${score}/100`;
+            } else {
+                verdictTitle.innerText = "Состав с потенциальными рисками";
+                safetyBadge.className = "px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 bg-rose-950 text-rose-400 border border-rose-800";
+                safetyBadge.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg> Рейтинг безопасности: ${score}/100`;
+            }
+
+            document.getElementById('riskComedogenic').innerText = `${maxComedogenic} из 5`;
+            document.getElementById('riskComedogenic').className = `text-sm font-bold mt-1 ${maxComedogenic >= 4 ? 'text-rose-400' : maxComedogenic >= 2 ? 'text-amber-400' : 'text-emerald-400'}`;
+
+            document.getElementById('riskAllergens').innerText = allergenCount > 0 ? `${allergenCount} найдено` : 'Нет';
+            document.getElementById('riskAllergens').className = `text-sm font-bold mt-1 ${allergenCount > 0 ? 'text-amber-400' : 'text-emerald-400'}`;
+
+            document.getElementById('riskSulfates').innerText = hasSulfates ? 'Да (ПАВ)' : 'Нет';
+            document.getElementById('riskSulfates').className = `text-sm font-bold mt-1 ${hasSulfates ? 'text-amber-400' : 'text-emerald-400'}`;
+
+            document.getElementById('riskIrritants').innerText = hasIrritants ? 'Присутствуют' : 'Нет';
+            document.getElementById('riskIrritants').className = `text-sm font-bold mt-1 ${hasIrritants ? 'text-rose-400' : 'text-emerald-400'}`;
+
+            document.getElementById('componentCount').innerText = analyzedList.length;
+            const listContainer = document.getElementById('componentsList');
+            listContainer.innerHTML = '';
+
+            analyzedList.forEach(comp => {
+                const itemEl = document.createElement('div');
+                itemEl.className = "bg-darkBg border border-cardBorder rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-emerald-700/50 transition";
+                
+                itemEl.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <span class="w-7 h-7 rounded-lg bg-emerald-950/60 border border-emerald-800/50 flex items-center justify-center text-xs font-bold text-emerald-400 shrink-0">#${comp.position}</span>
+                        <div>
+                            <div class="font-semibold text-sm text-white">${comp.name}</div>
+                            <div class="text-xs text-slate-400 mt-0.5"><span class="text-emerald-400 font-medium">Функция:</span> ${comp.function}</div>
+                            <div class="text-[11px] text-slate-500 mt-1">${comp.description}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                        <span class="text-xs px-2.5 py-1 rounded-lg border font-medium ${comp.safetyColor}">
+                            ${comp.safety}
+                        </span>
+                        ${comp.comedogenic > 0 ? `<span class="text-xs px-2.5 py-1 rounded-lg border bg-rose-950/60 text-rose-300 border-rose-800 font-medium" title="Комедогенность (шкала 0-5)">Ком.: ${comp.comedogenic}/5</span>` : ''}
+                    </div>
+                `;
+                listContainer.appendChild(itemEl);
+            });
+
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('resultsContainer').classList.remove('hidden');
+            
+            showToast('Анализ состава успешно завершен!');
+        }
+    </script>
+</body>
+</html>
